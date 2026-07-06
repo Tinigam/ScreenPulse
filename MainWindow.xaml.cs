@@ -105,6 +105,7 @@ public partial class MainWindow : FluentWindow
         _showingLogPanel = false;
         SettingsPanel.Visibility = Visibility.Visible;
         LogPanel.Visibility = Visibility.Collapsed;
+        RefreshButton.Visibility = Visibility.Collapsed;
         PageHeading.Text = Loc.T("SettingsHeading");
         UpdateNavHighlight();
     }
@@ -114,6 +115,7 @@ public partial class MainWindow : FluentWindow
         _showingLogPanel = true;
         SettingsPanel.Visibility = Visibility.Collapsed;
         LogPanel.Visibility = Visibility.Visible;
+        RefreshButton.Visibility = Visibility.Visible;
         PageHeading.Text = Loc.T("NavLog");
         UpdateNavHighlight();
         RefreshLogGrid();

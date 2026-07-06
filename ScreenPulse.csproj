@@ -19,9 +19,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="Resources\app.ico">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
+    <!-- 编译进程序集内部,单文件发布时也不需要额外的外部图标文件 -->
+    <Resource Include="Resources\app.ico" />
   </ItemGroup>
 
   <ItemGroup>

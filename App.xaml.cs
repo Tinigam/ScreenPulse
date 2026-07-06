@@ -38,15 +38,24 @@ public partial class App : Application
         }
     }
 
-    private static string IconPath => System.IO.Path.Combine(AppContext.BaseDirectory, "Resources", "app.ico");
+    private static System.Drawing.Icon LoadAppIcon()
+    {
+        var resourceInfo = GetResourceStream(new Uri("pack://application:,,,/Resources/app.ico"));
+        if (resourceInfo is not null)
+        {
+            using (resourceInfo.Stream)
+            {
+                return new System.Drawing.Icon(resourceInfo.Stream);
+            }
+        }
+        return System.Drawing.SystemIcons.Application;
+    }
 
     private void SetupTrayIcon()
     {
         _trayIcon = new TaskbarIcon
         {
-            Icon = System.IO.File.Exists(IconPath)
-                ? new System.Drawing.Icon(IconPath)
-                : System.Drawing.SystemIcons.Application
+            Icon = LoadAppIcon()
         };
 
         var menu = new ContextMenu();
@@ -72,6 +81,10 @@ public partial class App : Application
 
         _trayIcon.ContextMenu = menu;
         _trayIcon.TrayMouseDoubleClick += (_, _) => ShowMainWindow();
+
+        // 纯代码创建的 TaskbarIcon 不在任何可视化树/资源字典里,
+        // 不会自动触发图标创建,必须手动 ForceCreate 才会真正显示在托盘
+        _trayIcon.ForceCreate(enablesEfficiencyMode: false);
 
         RefreshTrayText();
     }
