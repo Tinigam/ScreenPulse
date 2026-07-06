@@ -11,6 +11,9 @@ public class AppSettings
     public int RetentionDays { get; set; } = 14;
     public bool AutoStartEnabled { get; set; } = false;
     public bool MonitoringEnabled { get; set; } = true;
+
+    // 长时间空闲(达到 IdleSkipThresholdMinutes)后,第一次操作恢复活跃时拍一张摄像头照片
+    public bool CaptureOnIdleResume { get; set; } = true;
     public string StorageFolder { get; set; } = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "ScreenPulse");

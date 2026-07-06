@@ -6,7 +6,7 @@
 
 ## 简体中文
 
-个人电脑使用记录工具。长时间未产生新画面时自动跳过,有变化时定时截图并记录当前使用的程序,帮助你事后回溯自己的电脑使用情况。仅供本机个人自用,所有数据只保存在本地,不上传任何服务器。
+个人电脑使用记录工具。长时间未产生新画面时自动跳过,有变化时定时截图并记录当前使用的程序;长时间空闲后第一次操作(或程序启动时)还会顺带拍一张摄像头照片,并和当时的屏幕截图配对展示,帮助你事后回溯自己的电脑使用情况。仅供本机个人自用,所有数据只保存在本地,不上传任何服务器。
 
 ### 功能特性
 
@@ -14,6 +14,11 @@
 - **空闲自动跳过**:检测到长时间无键盘鼠标操作时跳过截图,避免记录发呆/挂机画面。
 - **画面去重**:相邻两次截图内容基本一致时不会重复保存,只延长上一条记录的结束时间,避免长时间停留在同一界面时堆积大量重复截图。
 - **多屏支持**:多显示器环境下每个屏幕单独截图、单独去重。
+- **摄像头联动拍照**:程序启动、或长时间空闲后第一次恢复操作时,自动拍一张摄像头照片,并同时截取所有屏幕——三者共享同一时间戳,在使用记录里点开会自动配对展示在一起。可在设置中关闭。
+- **资源占用监控**:每次截图时顺带采样 CPU、内存、GPU、网络吞吐,数值是"距上次采样以来的平均值",和截图间隔天然对齐,记录在使用记录表格里。
+- **使用记录筛选**:按日期范围(精确到分钟)、程序名、窗口标题关键词筛选历史记录;筛选栏默认收起,点"筛选"展开。
+- **清空日志**:一键删除全部历史记录和截图/照片文件(会弹确认框,不可恢复)。
+- **点击查看原图**:预览区的缩略图可以点击,用系统默认看图程序打开原始文件。
 - **自动清理**:超过保留天数(默认 14 天)的截图和记录自动删除,控制磁盘占用。
 - **排除名单**:可将银行、密码管理器等敏感软件加入排除名单,命中时不截图、不记录。
 - **开机自启**:可在设置中一键开启/关闭(写入当前用户的注册表 Run 键,无需管理员权限)。
@@ -22,7 +27,7 @@
 
 ### 环境要求
 
-- Windows 10 / 11
+- Windows 10 / 11(需要有摄像头才能使用摄像头联动拍照功能,没有摄像头时该功能会静默跳过,不影响其他功能)
 - [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)(仅开发构建需要,发布后的程序不需要用户单独安装运行时,见下方发布说明)
 
 ### 快速开始
@@ -41,7 +46,7 @@ dotnet publish -c Release -r win-x64 --self-contained true `
   -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
 ```
 
-生成的 `ScreenPulse.exe` 位于 `bin\Release\net8.0-windows\win-x64\publish\`,可独立复制到任意 Windows 电脑运行,无需额外安装 .NET 运行时。
+生成的 `ScreenPulse.exe` 位于 `bin\Release\net8.0-windows\win-x64\publish\`,可独立复制到任意 Windows 电脑运行,无需额外安装 .NET 运行时。由于内置了 OpenCV(摄像头拍照用),单文件体积约 260MB。
 
 ### 配置说明
 
@@ -55,10 +60,23 @@ dotnet publish -c Release -r win-x64 --self-contained true `
 | --- | --- | --- |
 | 截图间隔 | 每隔多少分钟检查并截图一次 | 5 分钟 |
 | 空闲跳过阈值 | 无操作超过该时长则跳过本次截图 | 2 分钟 |
+| 空闲后拍照 | 长时间空闲后第一次操作(或程序启动时)是否拍摄摄像头照片 | 开启 |
 | 保留天数 | 超过该天数的截图和记录自动删除 | 14 天 |
 | 相似度阈值 | 判定"画面未变化"的相似度下限(0.80~0.999) | 0.985 |
 | 开机自启 | 是否随 Windows 登录自动启动 | 关闭 |
 | 排除的程序 | 命中的进程名不截图、不记录 | 空 |
+
+### 使用记录里的字段
+
+| 列 | 说明 |
+| --- | --- |
+| 时间 | 截图/照片实际拍摄的时刻;同一事件(如启动时)拍下的多条记录只在第一行显示时间,视觉上像合并了单元格 |
+| 屏幕 | 屏幕编号(0/1/...),摄像头照片显示为 `-` |
+| 程序 | 活动窗口所属程序,摄像头照片显示为"摄像头" |
+| CPU / 内存 / GPU / 网络 | 当次采样的系统资源占用 |
+| 窗口标题 | 活动窗口标题;摄像头照片显示触发原因("程序启动"/"空闲后恢复操作") |
+
+选中任意一行,右侧会显示当时同一时刻拍下的所有画面(摄像头 + 各屏幕截图),点击图片可查看原图。
 
 ### 数据存储结构
 
@@ -66,24 +84,25 @@ dotnet publish -c Release -r win-x64 --self-contained true `
 %LocalAppData%\ScreenPulse\
 ├── settings.json                  # 设置文件
 ├── Logs\
-│   └── 2026-07-06.csv             # 按天存储的记录(开始/结束时间、屏幕、程序、窗口标题、截图路径)
+│   └── 2026-07-06.csv             # 按天存储的记录(时间、屏幕、程序、窗口标题、资源占用、截图路径)
 └── Screenshots\
     └── 2026-07-06\
-        └── 14-05-00_screen0.jpg   # 按天分文件夹存储的截图
+        ├── 14-05-00_screen0.jpg   # 按天分文件夹存储的截图
+        └── 15-32-40_webcam.jpg    # 摄像头照片和截图存在同一文件夹里
 ```
 
 ### 隐私说明
 
 - 本程序仅用于个人自我监控,不含任何联网上传、远程控制或隐蔽运行逻辑。
-- 截图可能包含敏感信息(密码输入框画面、聊天内容等),建议将相关软件加入设置中的排除名单。
-- 卸载/停止使用时,直接删除 `%LocalAppData%\ScreenPulse` 目录即可清除全部历史数据。
+- 截图/照片可能包含敏感信息(密码输入框画面、聊天内容、本人相貌等),建议将相关软件加入设置中的排除名单,或关闭摄像头拍照功能。
+- 卸载/停止使用时,直接删除 `%LocalAppData%\ScreenPulse` 目录即可清除全部历史数据,或在使用记录页点击"清空日志"。
 
 ### 项目结构
 
 ```
 ScreenPulse/
 ├── App.xaml(.cs)              # 应用入口、托盘图标与生命周期管理
-├── MainWindow.xaml(.cs)       # 主窗口:设置页 + 使用记录页
+├── MainWindow.xaml(.cs)       # 主窗口:设置页 + 使用记录页(含筛选、分组预览)
 ├── Models/
 │   ├── AppSettings.cs         # 设置的读写与持久化
 │   └── LogEntry.cs            # 单条使用记录及 CSV 序列化
@@ -91,8 +110,10 @@ ScreenPulse/
 │   ├── IdleDetector.cs        # 系统空闲时间检测
 │   ├── ActiveWindowService.cs # 当前活动窗口/进程获取
 │   ├── ScreenshotService.cs   # 多屏截图与相似度比较
+│   ├── WebcamService.cs       # 摄像头拍照
+│   ├── SystemMetricsService.cs # CPU/内存/GPU/网络占用采样
 │   ├── ActivityLogStore.cs    # 按天存储的日志读写
-│   ├── MonitorService.cs      # 核心调度:定时截图、去重、清理
+│   ├── MonitorService.cs      # 核心调度:定时截图、去重、摄像头联动、清理
 │   ├── RetentionCleanupService.cs # 过期数据清理
 │   ├── AutoStartService.cs    # 开机自启注册表读写
 │   └── Loc.cs                 # 中英文文案
@@ -105,12 +126,14 @@ ScreenPulse/
 - .NET 8 / WPF
 - [WPF-UI](https://github.com/lepoco/wpfui) — Fluent Design(Windows 11 风格)控件与窗口
 - [H.NotifyIcon.Wpf](https://github.com/HavenDV/H.NotifyIcon) — 系统托盘图标
+- [OpenCvSharp4](https://github.com/shimat/opencvsharp) — 摄像头拍照
+- `System.Diagnostics.PerformanceCounter` — CPU/内存/GPU/网络占用采样
 
 ---
 
 ## English
 
-A personal activity-logging tool for Windows. It automatically skips capturing when nothing has changed on screen for a while, and periodically captures a screenshot plus the currently active program whenever the screen does change — helping you look back at how you've used your computer. Built for personal, single-machine use only: all data stays local and nothing is ever uploaded.
+A personal activity-logging tool for Windows. It automatically skips capturing when nothing has changed on screen for a while, and periodically captures a screenshot plus the currently active program whenever the screen does change. It also takes a webcam photo on app startup and on the first action after a long idle period, pairing it with the screenshots taken at that same instant — helping you look back at how you've used your computer. Built for personal, single-machine use only: all data stays local and nothing is ever uploaded.
 
 ### Features
 
@@ -118,6 +141,11 @@ A personal activity-logging tool for Windows. It automatically skips capturing w
 - **Idle skip**: Skips capture automatically after a configurable period of no keyboard/mouse input, so idle/AFK time isn't logged.
 - **Duplicate detection**: If consecutive captures look essentially the same, the screenshot isn't saved again — the previous log entry's end time is simply extended, preventing long stretches on one screen from flooding your history with near-identical images.
 - **Multi-monitor support**: Each display is captured and deduplicated independently.
+- **Webcam capture on key events**: On app startup, and on the first action after being idle for a while, ScreenPulse takes a webcam photo and captures all screens at the same instant — sharing one timestamp so they can be viewed together in the Activity Log. Can be turned off in Settings.
+- **System resource monitoring**: Samples CPU, memory, GPU, and network throughput alongside every capture. Values represent the average since the last sample, naturally aligned with the capture interval, and are shown in the Activity Log table.
+- **Activity Log filtering**: Filter history by date range (down to the minute), process name, or a window-title keyword search. The filter bar is collapsed by default — click "Filter" to expand it.
+- **Clear Log**: One click to permanently delete all history and screenshot/photo files (with a confirmation prompt — this cannot be undone).
+- **Click to view full size**: Click any thumbnail in the preview pane to open the original file in your system's default image viewer.
 - **Automatic retention cleanup**: Screenshots and log entries older than the retention period (default 14 days) are deleted automatically to keep disk usage in check.
 - **Exclusion list**: Add sensitive apps (banking software, password managers, etc.) to a list so they're never captured or logged.
 - **Launch at login**: Toggle from Settings; writes to the current user's registry Run key, no admin rights required.
@@ -126,7 +154,7 @@ A personal activity-logging tool for Windows. It automatically skips capturing w
 
 ### Requirements
 
-- Windows 10 / 11
+- Windows 10 / 11 (a webcam is required for the webcam-capture feature; if none is present it silently no-ops without affecting anything else)
 - [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) (only needed to build from source; a published build doesn't require end users to install the runtime — see publishing instructions below)
 
 ### Getting Started
@@ -145,7 +173,7 @@ dotnet publish -c Release -r win-x64 --self-contained true `
   -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
 ```
 
-The resulting `ScreenPulse.exe` is at `bin\Release\net8.0-windows\win-x64\publish\` and can be copied to any Windows machine and run standalone — no separate .NET runtime install needed.
+The resulting `ScreenPulse.exe` is at `bin\Release\net8.0-windows\win-x64\publish\` and can be copied to any Windows machine and run standalone — no separate .NET runtime install needed. Because OpenCV is bundled in (for webcam capture), the single file is roughly 260MB.
 
 ### Configuration
 
@@ -159,10 +187,23 @@ All settings can be changed from the in-app Settings page and are stored at:
 | --- | --- | --- |
 | Capture interval | How often (minutes) to check and capture | 5 minutes |
 | Idle skip threshold | Skip capture if idle for longer than this | 2 minutes |
+| Capture on idle resume | Take a webcam photo on the first action after being idle (or on app startup) | On |
 | Retention days | Screenshots/entries older than this are auto-deleted | 14 days |
 | Similarity threshold | Lower bound for "unchanged" screen detection (0.80~0.999) | 0.985 |
 | Launch at login | Whether to start automatically with Windows | Off |
 | Excluded programs | Process names that are never captured or logged | Empty |
+
+### Activity Log columns
+
+| Column | Description |
+| --- | --- |
+| Time | The moment the screenshot/photo was actually taken; multiple rows from the same event (e.g. startup) only show the time on the first row, visually resembling a merged cell |
+| Screen | Screen index (0/1/...); shows `-` for webcam photos |
+| Process | The active window's process; shows "Webcam" for webcam photos |
+| CPU / Memory / GPU / Network | System resource usage at the time of that sample |
+| Window Title | The active window's title; for webcam photos, shows the trigger reason ("App started" / "Resumed after idle") |
+
+Select any row to see every capture taken at that same instant (webcam + each screen) in the preview pane on the right; click an image to open the original file.
 
 ### Data Layout
 
@@ -170,24 +211,25 @@ All settings can be changed from the in-app Settings page and are stored at:
 %LocalAppData%\ScreenPulse\
 ├── settings.json                  # Settings file
 ├── Logs\
-│   └── 2026-07-06.csv             # Daily log (start/end time, screen, process, window title, screenshot path)
+│   └── 2026-07-06.csv             # Daily log (time, screen, process, window title, resource usage, screenshot path)
 └── Screenshots\
     └── 2026-07-06\
-        └── 14-05-00_screen0.jpg   # Screenshots grouped into per-day folders
+        ├── 14-05-00_screen0.jpg   # Screenshots grouped into per-day folders
+        └── 15-32-40_webcam.jpg    # Webcam photos live alongside screenshots in the same folder
 ```
 
 ### Privacy Notes
 
 - This tool is intended for personal self-monitoring only — it has no networking, remote control, or hidden-execution logic.
-- Screenshots may capture sensitive information (password fields, chat content, etc.); add relevant apps to the exclusion list in Settings.
-- To uninstall or wipe all history, simply delete the `%LocalAppData%\ScreenPulse` folder.
+- Screenshots/photos may capture sensitive information (password fields, chat content, your own face, etc.); add relevant apps to the exclusion list in Settings, or turn off webcam capture.
+- To uninstall or wipe all history, delete the `%LocalAppData%\ScreenPulse` folder, or use the "Clear Log" button on the Activity Log page.
 
 ### Project Structure
 
 ```
 ScreenPulse/
 ├── App.xaml(.cs)              # App entry point, tray icon, lifecycle management
-├── MainWindow.xaml(.cs)       # Main window: Settings page + Activity Log page
+├── MainWindow.xaml(.cs)       # Main window: Settings page + Activity Log page (filtering, grouped preview)
 ├── Models/
 │   ├── AppSettings.cs         # Settings persistence
 │   └── LogEntry.cs            # A single log entry and its CSV (de)serialization
@@ -195,8 +237,10 @@ ScreenPulse/
 │   ├── IdleDetector.cs        # System idle-time detection
 │   ├── ActiveWindowService.cs # Active window/process lookup
 │   ├── ScreenshotService.cs   # Multi-monitor capture and similarity comparison
+│   ├── WebcamService.cs       # Webcam photo capture
+│   ├── SystemMetricsService.cs # CPU/memory/GPU/network usage sampling
 │   ├── ActivityLogStore.cs    # Per-day log file read/write
-│   ├── MonitorService.cs      # Core scheduler: capture, dedupe, cleanup
+│   ├── MonitorService.cs      # Core scheduler: capture, dedupe, webcam pairing, cleanup
 │   ├── RetentionCleanupService.cs # Expired-data cleanup
 │   ├── AutoStartService.cs    # Registry Run key read/write
 │   └── Loc.cs                 # Chinese/English UI strings
@@ -209,3 +253,5 @@ ScreenPulse/
 - .NET 8 / WPF
 - [WPF-UI](https://github.com/lepoco/wpfui) — Fluent Design (Windows 11 style) controls and window chrome
 - [H.NotifyIcon.Wpf](https://github.com/HavenDV/H.NotifyIcon) — System tray icon
+- [OpenCvSharp4](https://github.com/shimat/opencvsharp) — Webcam capture
+- `System.Diagnostics.PerformanceCounter` — CPU/memory/GPU/network usage sampling

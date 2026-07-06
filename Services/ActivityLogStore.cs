@@ -67,6 +67,14 @@ public class ActivityLogStore
         if (Directory.Exists(screenshotFolder)) Directory.Delete(screenshotFolder, recursive: true);
     }
 
+    public void DeleteAllDays()
+    {
+        foreach (var day in GetAllLoggedDays().ToList())
+        {
+            DeleteDay(day);
+        }
+    }
+
     public IEnumerable<DateTime> GetAllLoggedDays()
     {
         var logsFolder = Path.Combine(_rootFolder, "Logs");
