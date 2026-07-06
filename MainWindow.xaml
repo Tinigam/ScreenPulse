@@ -156,14 +156,27 @@
                                       BorderThickness="0" IsReadOnly="True"
                                       Sorting="LogDataGrid_Sorting"
                                       SelectionChanged="LogDataGrid_SelectionChanged">
+                                <DataGrid.RowStyle>
+                                    <Style TargetType="DataGridRow">
+                                        <Setter Property="BorderThickness" Value="0"/>
+                                        <Style.Triggers>
+                                            <!-- ShowTimeColumn 同时也是"这一行是不是新的一组时间"的标记,
+                                                 排序/筛选后会重新计算,这里顺带复用来画分组分隔线,不需要额外状态 -->
+                                            <DataTrigger Binding="{Binding ShowTimeColumn}" Value="True">
+                                                <Setter Property="BorderBrush" Value="#4DFFFFFF"/>
+                                                <Setter Property="BorderThickness" Value="0,2,0,0"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </DataGrid.RowStyle>
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn x:Name="ColTime" Binding="{Binding TimeColumnText}" Width="80"/>
-                                    <DataGridTextColumn x:Name="ColScreen" Binding="{Binding ScreenDisplay}" Width="40"/>
-                                    <DataGridTextColumn x:Name="ColProcess" Binding="{Binding ProcessName}" Width="90"/>
-                                    <DataGridTextColumn x:Name="ColCpu" Binding="{Binding CpuDisplay}" Width="42"/>
-                                    <DataGridTextColumn x:Name="ColMemory" Binding="{Binding MemoryDisplay}" Width="42"/>
-                                    <DataGridTextColumn x:Name="ColGpu" Binding="{Binding GpuDisplay}" Width="42"/>
-                                    <DataGridTextColumn x:Name="ColNetwork" Binding="{Binding NetworkDisplay}" Width="68"/>
+                                    <DataGridTextColumn x:Name="ColTime" Binding="{Binding TimeColumnText}" Width="130"/>
+                                    <DataGridTextColumn x:Name="ColScreen" Binding="{Binding ScreenDisplay}" Width="55"/>
+                                    <DataGridTextColumn x:Name="ColProcess" Binding="{Binding ProcessName}" Width="100"/>
+                                    <DataGridTextColumn x:Name="ColCpu" Binding="{Binding CpuDisplay}" Width="55"/>
+                                    <DataGridTextColumn x:Name="ColMemory" Binding="{Binding MemoryDisplay}" Width="55"/>
+                                    <DataGridTextColumn x:Name="ColGpu" Binding="{Binding GpuDisplay}" Width="55"/>
+                                    <DataGridTextColumn x:Name="ColNetwork" Binding="{Binding NetworkDisplay}" Width="80"/>
                                     <DataGridTextColumn x:Name="ColTitle" Binding="{Binding WindowTitle}" Width="*"/>
                                 </DataGrid.Columns>
                             </DataGrid>

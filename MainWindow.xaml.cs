@@ -28,7 +28,7 @@ public class LogEntryViewModel
     public string StartTimeDisplay => Entry.StartTime.ToString("yyyy-MM-dd HH:mm:ss");
     public string EndTimeDisplay => Entry.EndTime.ToString("yyyy-MM-dd HH:mm:ss");
     // 截图实际拍摄的时刻——即使这条记录后来被"画面未变化"延长过,图片本身还是这一刻拍的
-    public string TimeDisplay => Entry.StartTime.ToString("HH:mm:ss");
+    public string TimeDisplay => Entry.StartTime.ToString("MM-dd HH:mm:ss");
 
     // 同一时刻(结束时间相同)的多条记录只在第一行显示时间,后面留空,视觉上像合并了单元格
     public bool ShowTimeColumn { get; set; } = true;
