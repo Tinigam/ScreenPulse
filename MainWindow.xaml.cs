@@ -320,15 +320,61 @@ public partial class MainWindow : FluentWindow
         }
 
         var viewModels = entries.Select(en => new LogEntryViewModel(en)).ToList();
-        for (int i = 1; i < viewModels.Count; i++)
-        {
-            if (viewModels[i].Entry.EndTime == viewModels[i - 1].Entry.EndTime)
-            {
-                viewModels[i].ShowTimeColumn = false;
-            }
-        }
-
+        ApplyTimeColumnMerging(viewModels);
         LogDataGrid.ItemsSource = viewModels;
+
+        // 筛选条件变了,列表回到默认的"按时间倒序"排列,清掉表头上残留的排序箭头
+        foreach (var col in LogDataGrid.Columns) col.SortDirection = null;
+        _sortedColumn = null;
+    }
+
+    // 同一时刻(结束时间相同)的连续多条记录只在第一行显示时间,后面留空,视觉上像合并了单元格。
+    // 注意:这个"连续"是相对于当前显示顺序而言的,所以每次重新排序后都要重算一遍
+    private static void ApplyTimeColumnMerging(List<LogEntryViewModel> viewModels)
+    {
+        for (int i = 0; i < viewModels.Count; i++)
+        {
+            viewModels[i].ShowTimeColumn = i == 0 || viewModels[i].Entry.EndTime != viewModels[i - 1].Entry.EndTime;
+        }
+    }
+
+    private System.Windows.Controls.DataGridColumn? _sortedColumn;
+    private System.ComponentModel.ListSortDirection _sortedDirection;
+
+    // DataGrid 自带的点表头排序是直接对绑定的字符串做排序的,会把我们手动留空的时间列(用于呈现"合并单元格")
+    // 打乱顺序;所以这里接管排序,按每列对应的真实值排完序后,再重新计算一遍时间列的合并
+    private void LogDataGrid_Sorting(object sender, System.Windows.Controls.DataGridSortingEventArgs e)
+    {
+        e.Handled = true;
+        var column = e.Column;
+
+        Func<LogEntryViewModel, IComparable> keySelector;
+        if (column == ColTime) keySelector = vm => vm.Entry.StartTime;
+        else if (column == ColScreen) keySelector = vm => vm.Entry.ScreenIndex;
+        else if (column == ColProcess) keySelector = vm => vm.ProcessName;
+        else if (column == ColCpu) keySelector = vm => vm.Entry.CpuPercent;
+        else if (column == ColMemory) keySelector = vm => vm.Entry.MemoryPercent;
+        else if (column == ColGpu) keySelector = vm => vm.Entry.GpuPercent;
+        else if (column == ColNetwork) keySelector = vm => vm.Entry.NetworkKBps;
+        else if (column == ColTitle) keySelector = vm => vm.WindowTitle;
+        else return;
+
+        var direction = column == _sortedColumn && _sortedDirection == System.ComponentModel.ListSortDirection.Ascending
+            ? System.ComponentModel.ListSortDirection.Descending
+            : System.ComponentModel.ListSortDirection.Ascending;
+
+        var current = (LogDataGrid.ItemsSource as IEnumerable<LogEntryViewModel>)?.ToList() ?? new List<LogEntryViewModel>();
+        var sorted = direction == System.ComponentModel.ListSortDirection.Ascending
+            ? current.OrderBy(keySelector).ToList()
+            : current.OrderByDescending(keySelector).ToList();
+
+        ApplyTimeColumnMerging(sorted);
+        LogDataGrid.ItemsSource = sorted;
+
+        foreach (var col in LogDataGrid.Columns) col.SortDirection = null;
+        column.SortDirection = direction;
+        _sortedColumn = column;
+        _sortedDirection = direction;
     }
 
     private void RepopulateProcessFilterOptions(IEnumerable<string> processNames)

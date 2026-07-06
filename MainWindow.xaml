@@ -154,6 +154,7 @@
 
                             <DataGrid x:Name="LogDataGrid" Grid.Row="1" AutoGenerateColumns="False" Background="Transparent"
                                       BorderThickness="0" IsReadOnly="True"
+                                      Sorting="LogDataGrid_Sorting"
                                       SelectionChanged="LogDataGrid_SelectionChanged">
                                 <DataGrid.Columns>
                                     <DataGridTextColumn x:Name="ColTime" Binding="{Binding TimeColumnText}" Width="80"/>
